@@ -140,8 +140,43 @@ st.markdown("""
         color: #FFFFFF !important;
     }
 
-    /* Input Fields */
-    .stSelectbox, .stRadio {
+    /* Input Fields - Selectbox */
+    .stSelectbox > div > div {
+        background-color: #1a1a1a;
+        color: #FFFFFF;
+        border: 1px solid #333333;
+    }
+
+    .stSelectbox label {
+        color: #FFFFFF !important;
+    }
+
+    /* Dropdown Menu */
+    [data-baseweb="select"] {
+        background-color: #1a1a1a;
+    }
+
+    [data-baseweb="select"] > div {
+        background-color: #1a1a1a;
+        border-color: #333333;
+    }
+
+    /* Dropdown Options */
+    [role="option"] {
+        background-color: #1a1a1a !important;
+        color: #FFFFFF !important;
+    }
+
+    [role="option"]:hover {
+        background-color: #333333 !important;
+    }
+
+    /* Radio Buttons */
+    .stRadio > label {
+        color: #FFFFFF !important;
+    }
+
+    .stRadio > div {
         color: #FFFFFF;
     }
 
