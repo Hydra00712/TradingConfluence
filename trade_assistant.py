@@ -36,17 +36,17 @@ st.markdown("""
         font-size: 3.5rem;
         font-weight: 900;
         text-align: center;
-        color: #CCCCCC;
+        color: #888888;
         text-transform: uppercase;
         letter-spacing: 8px;
         margin-bottom: 0.5rem;
-        text-shadow: 0 0 15px rgba(200,200,200,0.3);
+        text-shadow: 0 0 10px rgba(136,136,136,0.2);
         font-family: 'Courier New', monospace;
     }
 
     .sub-header {
         text-align: center;
-        color: #777777;
+        color: #555555;
         font-size: 1.1rem;
         letter-spacing: 3px;
         margin-bottom: 3rem;
@@ -307,6 +307,34 @@ def get_market_data():
             'demo': True
         }
 
+def analyze_news_sentiment(title):
+    """Analyze news sentiment - returns 'bullish', 'bearish', or 'neutral'"""
+    title_lower = title.lower()
+
+    # Bullish keywords (price going UP)
+    bullish_keywords = [
+        'rally', 'surge', 'gain', 'rise', 'jump', 'climb', 'soar', 'advance',
+        'boost', 'strength', 'strong', 'beat', 'positive', 'optimis', 'bull',
+        'record high', 'breakout', 'momentum', 'upgrade', 'outperform'
+    ]
+
+    # Bearish keywords (price going DOWN)
+    bearish_keywords = [
+        'fall', 'drop', 'plunge', 'decline', 'tumble', 'slide', 'slump', 'sink',
+        'loss', 'weak', 'concern', 'fear', 'worry', 'risk', 'bear', 'crash',
+        'sell-off', 'selloff', 'downturn', 'downgrade', 'miss', 'disappoint'
+    ]
+
+    bullish_count = sum(1 for word in bullish_keywords if word in title_lower)
+    bearish_count = sum(1 for word in bearish_keywords if word in title_lower)
+
+    if bullish_count > bearish_count:
+        return 'bullish'
+    elif bearish_count > bullish_count:
+        return 'bearish'
+    else:
+        return 'neutral'
+
 @st.cache_data(ttl=1800)  # Cache for 30 minutes
 def get_futures_news():
     """Fetch ES and NQ futures news from the past week - optimized for speed"""
@@ -351,10 +379,12 @@ def get_futures_news():
                                     title = item.get('title', '')
                                     keywords = ['future', 's&p', 'nasdaq', 'sp500', 'nas100', 'es', 'nq', 'market', 'index']
                                     if any(keyword in title.lower() for keyword in keywords):
+                                        sentiment = analyze_news_sentiment(title)
                                         news_items.append({
                                             'title': title,
                                             'time': time_ago,
                                             'publisher': item.get('publisher', 'Unknown'),
+                                            'sentiment': sentiment
                                         })
             except:
                 continue  # Skip failed requests, don't break entire function
@@ -374,16 +404,20 @@ def get_futures_news():
 
 def get_fallback_news():
     """Fallback news if API fails"""
-    return [
-        {"title": "S&P 500 Futures Show Strength Ahead of Market Open", "time": "2 hours ago", "publisher": "MarketWatch"},
-        {"title": "Nasdaq Futures Rally on Tech Earnings Beat", "time": "5 hours ago", "publisher": "Bloomberg"},
-        {"title": "Fed Minutes Signal Potential Rate Hold", "time": "1 day ago", "publisher": "Reuters"},
-        {"title": "Futures Market Volatility Increases on Economic Data", "time": "1 day ago", "publisher": "CNBC"},
-        {"title": "Oil Prices Impact Energy Sector Futures", "time": "2 days ago", "publisher": "WSJ"},
-        {"title": "Tech Stocks Drive Nasdaq Futures Higher", "time": "2 days ago", "publisher": "Financial Times"},
-        {"title": "Economic Indicators Point to Market Strength", "time": "3 days ago", "publisher": "MarketWatch"},
-        {"title": "Global Markets React to US Futures Movement", "time": "3 days ago", "publisher": "Bloomberg"},
+    fallback = [
+        {"title": "S&P 500 Futures Show Strength Ahead of Market Open", "time": "2h ago", "publisher": "MarketWatch"},
+        {"title": "Nasdaq Futures Rally on Tech Earnings Beat", "time": "5h ago", "publisher": "Bloomberg"},
+        {"title": "Fed Minutes Signal Potential Rate Hold", "time": "1d ago", "publisher": "Reuters"},
+        {"title": "Futures Market Volatility Increases on Economic Data", "time": "1d ago", "publisher": "CNBC"},
+        {"title": "Oil Prices Impact Energy Sector Futures", "time": "2d ago", "publisher": "WSJ"},
+        {"title": "Tech Stocks Drive Nasdaq Futures Higher", "time": "2d ago", "publisher": "Financial Times"},
+        {"title": "Economic Indicators Point to Market Strength", "time": "3d ago", "publisher": "MarketWatch"},
+        {"title": "Global Markets React to US Futures Movement", "time": "3d ago", "publisher": "Bloomberg"},
     ]
+    # Add sentiment to fallback news
+    for item in fallback:
+        item['sentiment'] = analyze_news_sentiment(item['title'])
+    return fallback
 
 # --- SIDEBAR: MARKET DATA & NEWS ---
 with st.sidebar:
@@ -446,9 +480,24 @@ with st.sidebar:
             publisher = item.get('publisher', '')
             publisher_text = f'<span style="color: #666; font-size: 0.75rem;">• {publisher}</span>' if publisher else ''
 
+            # Determine color based on sentiment
+            sentiment = item.get('sentiment', 'neutral')
+            if sentiment == 'bullish':
+                border_color = '#00FF00'
+                title_color = '#00FF00'
+                sentiment_icon = '📈'
+            elif sentiment == 'bearish':
+                border_color = '#FF0000'
+                title_color = '#FF0000'
+                sentiment_icon = '📉'
+            else:
+                border_color = '#FFFFFF'
+                title_color = '#AAAAAA'
+                sentiment_icon = '📊'
+
             st.markdown(f"""
-            <div class="news-card">
-                <strong style="color: #FFFFFF; font-size: 0.9rem; line-height: 1.4;">{item["title"]}</strong><br>
+            <div class="news-card" style="border-left-color: {border_color};">
+                <strong style="color: {title_color}; font-size: 0.9rem; line-height: 1.4;">{sentiment_icon} {item["title"]}</strong><br>
                 <small style="color:#888;">⏱ {item["time"]} {publisher_text}</small>
             </div>
             """, unsafe_allow_html=True)
