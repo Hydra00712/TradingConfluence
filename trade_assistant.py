@@ -21,6 +21,16 @@ st.markdown("""
         background: #000000;
     }
 
+    /* Hide Streamlit Branding and Menu */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Hide empty containers */
+    .element-container:has(> .stMarkdown > div:empty) {
+        display: none;
+    }
+
     /* Main Header */
     .main-header {
         font-size: 3.5rem;
@@ -308,25 +318,29 @@ with st.sidebar:
     if market_data:
         # Show demo mode indicator if using fallback data
         if market_data.get('demo'):
-            st.markdown('<p style="color: #FFA500; font-size: 0.8rem; text-align: center;">📡 DEMO MODE - Live data unavailable</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #FFA500; font-size: 0.8rem; text-align: center; margin-bottom: 1rem;">📡 DEMO MODE - Live data unavailable</p>', unsafe_allow_html=True)
 
         # S&P 500
-        st.markdown('<div class="market-card">', unsafe_allow_html=True)
-        st.markdown("#### 📈 S&P 500 (ES)")
-        st.markdown(f"<h2 style='color: #FFFFFF; margin: 0;'>${market_data['sp500']['price']:.2f}</h2>", unsafe_allow_html=True)
-        change_class = "metric-positive" if market_data['sp500']['change'] >= 0 else "metric-negative"
-        change_symbol = "▲" if market_data['sp500']['change'] >= 0 else "▼"
-        st.markdown(f"<p class='{change_class}'>{change_symbol} {abs(market_data['sp500']['change']):.2f} ({market_data['sp500']['pct']:+.2f}%)</p>", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="market-card">
+            <h4 style="color: #FFFFFF; margin: 0 0 0.5rem 0;">📈 S&P 500 (ES)</h4>
+            <h2 style='color: #FFFFFF; margin: 0;'>${market_data['sp500']['price']:.2f}</h2>
+            <p class='{"metric-positive" if market_data['sp500']['change'] >= 0 else "metric-negative"}' style='margin: 0.5rem 0 0 0;'>
+                {"▲" if market_data['sp500']['change'] >= 0 else "▼"} {abs(market_data['sp500']['change']):.2f} ({market_data['sp500']['pct']:+.2f}%)
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
         # NAS100
-        st.markdown('<div class="market-card">', unsafe_allow_html=True)
-        st.markdown("#### 📊 NAS100 (NQ)")
-        st.markdown(f"<h2 style='color: #FFFFFF; margin: 0;'>${market_data['nas100']['price']:.2f}</h2>", unsafe_allow_html=True)
-        change_class = "metric-positive" if market_data['nas100']['change'] >= 0 else "metric-negative"
-        change_symbol = "▲" if market_data['nas100']['change'] >= 0 else "▼"
-        st.markdown(f"<p class='{change_class}'>{change_symbol} {abs(market_data['nas100']['change']):.2f} ({market_data['nas100']['pct']:+.2f}%)</p>", unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="market-card">
+            <h4 style="color: #FFFFFF; margin: 0 0 0.5rem 0;">📊 NAS100 (NQ)</h4>
+            <h2 style='color: #FFFFFF; margin: 0;'>${market_data['nas100']['price']:.2f}</h2>
+            <p class='{"metric-positive" if market_data['nas100']['change'] >= 0 else "metric-negative"}' style='margin: 0.5rem 0 0 0;'>
+                {"▲" if market_data['nas100']['change'] >= 0 else "▼"} {abs(market_data['nas100']['change']):.2f} ({market_data['nas100']['pct']:+.2f}%)
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
         # SMT Divergence Auto-Detection
         st.markdown("---")
@@ -359,35 +373,27 @@ col1, col2 = st.columns(2, gap="large")
 
 with col1:
     st.markdown("### 📊 TIMEFRAME BIASES")
-    st.markdown('<div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 1px solid #333;">', unsafe_allow_html=True)
     daily = st.selectbox("🔹 Daily Bias", ["Bullish", "Bearish", "Neutral"], key="daily")
     h4 = st.selectbox("🔹 4H Bias", ["Bullish", "Bearish", "Neutral"], key="h4")
     h1 = st.selectbox("🔹 1H Structure", ["Bullish", "Bearish", "Choppy/Neutral"], key="h1")
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("---")
 
     st.markdown("### 📉 MARKET CONTEXT")
-    st.markdown('<div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 1px solid #333;">', unsafe_allow_html=True)
     liquidity = st.selectbox("🔹 Liquidity Sweep", ["None", "Equal Highs (Sell Liquidity)", "Equal Lows (Buy Liquidity)"], key="liq")
     displacement = st.radio("🔹 Strong Displacement?", ["Yes", "No"], key="disp", horizontal=True)
     fvg = st.radio("🔹 Fair Value Gap?", ["Yes", "No"], key="fvg", horizontal=True)
     fvg_dir = st.selectbox("🔹 FVG Direction", ["Bullish", "Bearish", "None"], key="fvg_dir")
-    st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
     st.markdown("### 🔁 CORRELATION CHECK")
-    st.markdown('<div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 1px solid #333;">', unsafe_allow_html=True)
     smt = st.selectbox("🔹 SMT Divergence (ES & NAS)", ["Confirmed (Same Direction)", "Divergent", "Not Checked"], key="smt")
-    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("---")
 
     st.markdown("### 🕓 EXECUTION FILTERS")
-    st.markdown('<div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 1px solid #333;">', unsafe_allow_html=True)
     session = st.selectbox("🔹 Trading Session", ["London", "NY AM (14:30–17:00 UTC+1)", "NY PM (19:00–21:00 UTC+1)", "Outside Session"], key="session")
     confirmation = st.radio("🔹 Lower TF Confirmation (1M-5M)?", ["Yes", "No"], key="conf", horizontal=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
