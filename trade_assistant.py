@@ -41,7 +41,7 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 8px;
         margin-bottom: 0.5rem;
-        text-shadow: 0 0 10px rgba(136,136,136,0.2);
+        text-shadow: none;
         font-family: 'Courier New', monospace;
     }
 
@@ -240,23 +240,10 @@ st.markdown("""
         color: #FFFFFF !important;
     }
 
-    /* Glowing Effect for Important Elements */
-    .glow {
-        animation: glow 2s ease-in-out infinite alternate;
-    }
-
-    @keyframes glow {
-        from {
-            text-shadow: 0 0 5px #fff, 0 0 10px #fff;
-        }
-        to {
-            text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #fff;
-        }
-    }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h1 class="main-header glow">⚡ WALL STREET BIAS CHECKER ⚡</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">WALL STREET BIAS CHECKER</h1>', unsafe_allow_html=True)
 st.markdown('<p class="sub-header">SMART MONEY • CONFLUENCE • PRECISION</p>', unsafe_allow_html=True)
 
 # --- FUNCTIONS FOR MARKET DATA ---
