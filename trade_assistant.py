@@ -5,6 +5,7 @@ import streamlit as st
 import requests
 from datetime import datetime
 import json
+import time
 
 st.set_page_config(
     page_title="Wall Street Bias Checker",
@@ -259,7 +260,7 @@ st.markdown('<h1 class="main-header glow">⚡ WALL STREET BIAS CHECKER ⚡</h1>'
 st.markdown('<p class="sub-header">SMART MONEY • CONFLUENCE • PRECISION</p>', unsafe_allow_html=True)
 
 # --- FUNCTIONS FOR MARKET DATA ---
-@st.cache_data(ttl=30)  # Cache for 30 seconds for more real-time data
+@st.cache_data(ttl=10)  # Cache for 10 seconds for real-time updates
 def get_market_data():
     """Fetch REAL-TIME market data for S&P 500 and NAS100"""
     try:
@@ -488,7 +489,7 @@ with st.sidebar:
             st.markdown('<p style="color: #FF0000; font-size: 0.85rem; text-align: center; margin-bottom: 1rem; font-weight: bold;">⚠️ DEMO MODE - API Unavailable</p>', unsafe_allow_html=True)
             st.markdown('<p style="color: #888; font-size: 0.75rem; text-align: center; margin-bottom: 1rem;">Click 🔄 to retry</p>', unsafe_allow_html=True)
         else:
-            st.markdown('<p style="color: #00FF00; font-size: 0.75rem; text-align: center; margin-bottom: 1rem;">✅ LIVE DATA • Updates every 30s</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #00FF00; font-size: 0.75rem; text-align: center; margin-bottom: 1rem;">🔴 LIVE • Auto-updates every 10s</p>', unsafe_allow_html=True)
 
         # S&P 500
         st.markdown(f"""
@@ -566,6 +567,31 @@ with st.sidebar:
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(f'<p style="color: #666; font-size: 0.75rem; text-align: center; margin-top: 1rem;">Last updated: {datetime.now().strftime("%H:%M:%S")}</p>', unsafe_allow_html=True)
+
+    # Auto-refresh mechanism - only if live data is available
+    if not market_data.get('demo'):
+        # Add a placeholder for auto-refresh countdown
+        refresh_placeholder = st.empty()
+
+        # Initialize session state for countdown
+        if 'last_refresh' not in st.session_state:
+            st.session_state.last_refresh = time.time()
+
+        # Calculate time since last refresh
+        time_elapsed = time.time() - st.session_state.last_refresh
+        time_remaining = max(0, 10 - int(time_elapsed))
+
+        # Show countdown
+        refresh_placeholder.markdown(
+            f'<p style="color: #00FF00; font-size: 0.7rem; text-align: center; margin-top: 0.5rem;">Next update in {time_remaining}s</p>',
+            unsafe_allow_html=True
+        )
+
+        # Auto-refresh after 10 seconds
+        if time_elapsed >= 10:
+            st.session_state.last_refresh = time.time()
+            time.sleep(0.1)
+            st.rerun()
 
 # --- MAIN CONTENT: INPUTS ---
 st.markdown("---")
