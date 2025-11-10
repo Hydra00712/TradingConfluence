@@ -78,7 +78,8 @@ st.markdown("""
         padding: 1rem;
         border-radius: 8px;
         margin-bottom: 0.8rem;
-        border-left: 3px solid #FFFFFF;
+        border-left-width: 3px;
+        border-left-style: solid;
         transition: all 0.3s ease;
     }
 
@@ -543,8 +544,8 @@ with st.sidebar:
                 sentiment_icon = '📊'
 
             st.markdown(f"""
-            <div class="news-card" style="border-left-color: {border_color};">
-                <strong style="color: {title_color}; font-size: 0.9rem; line-height: 1.4;">{sentiment_icon} {item["title"]}</strong><br>
+            <div class="news-card" style="border-left: 3px solid {border_color} !important;">
+                <strong style="color: {title_color} !important; font-size: 0.9rem; line-height: 1.4;">{sentiment_icon} {item["title"]}</strong><br>
                 <small style="color:#888;">⏱ {item["time"]} {publisher_text}</small>
             </div>
             """, unsafe_allow_html=True)
