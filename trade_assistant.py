@@ -259,46 +259,95 @@ st.markdown('<h1 class="main-header glow">⚡ WALL STREET BIAS CHECKER ⚡</h1>'
 st.markdown('<p class="sub-header">SMART MONEY • CONFLUENCE • PRECISION</p>', unsafe_allow_html=True)
 
 # --- FUNCTIONS FOR MARKET DATA ---
-@st.cache_data(ttl=60)  # Cache for 1 minute
+@st.cache_data(ttl=30)  # Cache for 30 seconds for more real-time data
 def get_market_data():
-    """Fetch real-time market data for S&P 500 and NAS100 - optimized"""
+    """Fetch REAL-TIME market data for S&P 500 and NAS100"""
     try:
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': 'https://finance.yahoo.com/'
         }
 
-        # Optimized: Single request with both symbols
-        url = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=ES=F,NQ=F"
+        # Method 1: Yahoo Finance Chart API (most reliable)
+        try:
+            sp500_url = "https://query1.finance.yahoo.com/v8/finance/chart/ES=F?interval=1m&range=1d"
+            nas100_url = "https://query1.finance.yahoo.com/v8/finance/chart/NQ=F?interval=1m&range=1d"
 
-        response = requests.get(url, headers=headers, timeout=5)  # Reduced timeout
-        data = response.json()
+            sp500_resp = requests.get(sp500_url, headers=headers, timeout=10)
+            nas100_resp = requests.get(nas100_url, headers=headers, timeout=10)
 
-        quotes = data['quoteResponse']['result']
+            if sp500_resp.status_code == 200 and nas100_resp.status_code == 200:
+                sp500_data = sp500_resp.json()
+                nas100_data = nas100_resp.json()
 
-        # Parse ES (S&P 500)
-        sp500_quote = next((q for q in quotes if q['symbol'] == 'ES=F'), None)
-        if sp500_quote:
-            sp500_price = sp500_quote.get('regularMarketPrice', 0)
-            sp500_prev = sp500_quote.get('regularMarketPreviousClose', sp500_price)
-            sp500_change = sp500_quote.get('regularMarketChange', 0)
-            sp500_pct = sp500_quote.get('regularMarketChangePercent', 0)
-        else:
-            raise Exception("No SP500 data")
+                # Extract from chart data
+                sp500_result = sp500_data['chart']['result'][0]
+                nas100_result = nas100_data['chart']['result'][0]
 
-        # Parse NQ (Nasdaq)
-        nas100_quote = next((q for q in quotes if q['symbol'] == 'NQ=F'), None)
-        if nas100_quote:
-            nas100_price = nas100_quote.get('regularMarketPrice', 0)
-            nas100_prev = nas100_quote.get('regularMarketPreviousClose', nas100_price)
-            nas100_change = nas100_quote.get('regularMarketChange', 0)
-            nas100_pct = nas100_quote.get('regularMarketChangePercent', 0)
-        else:
-            raise Exception("No NAS100 data")
+                sp500_meta = sp500_result['meta']
+                nas100_meta = nas100_result['meta']
 
-        return {
-            'sp500': {'price': sp500_price, 'change': sp500_change, 'pct': sp500_pct},
-            'nas100': {'price': nas100_price, 'change': nas100_change, 'pct': nas100_pct}
-        }
+                # Get current price (last quote or regular market price)
+                sp500_price = sp500_meta.get('regularMarketPrice', sp500_meta.get('previousClose', 0))
+                sp500_prev = sp500_meta.get('chartPreviousClose', sp500_meta.get('previousClose', sp500_price))
+
+                nas100_price = nas100_meta.get('regularMarketPrice', nas100_meta.get('previousClose', 0))
+                nas100_prev = nas100_meta.get('chartPreviousClose', nas100_meta.get('previousClose', nas100_price))
+
+                # Calculate changes
+                sp500_change = sp500_price - sp500_prev
+                sp500_pct = (sp500_change / sp500_prev * 100) if sp500_prev != 0 else 0
+
+                nas100_change = nas100_price - nas100_prev
+                nas100_pct = (nas100_change / nas100_prev * 100) if nas100_prev != 0 else 0
+
+                # Verify we have valid data
+                if sp500_price > 1000 and nas100_price > 1000:  # Sanity check
+                    return {
+                        'sp500': {'price': sp500_price, 'change': sp500_change, 'pct': sp500_pct},
+                        'nas100': {'price': nas100_price, 'change': nas100_change, 'pct': nas100_pct}
+                    }
+        except Exception as e:
+            pass
+
+        # Method 2: Try using index symbols as fallback
+        try:
+            sp500_url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d"
+            nas100_url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EIXIC?interval=1m&range=1d"
+
+            sp500_resp = requests.get(sp500_url, headers=headers, timeout=10)
+            nas100_resp = requests.get(nas100_url, headers=headers, timeout=10)
+
+            if sp500_resp.status_code == 200 and nas100_resp.status_code == 200:
+                sp500_data = sp500_resp.json()
+                nas100_data = nas100_resp.json()
+
+                sp500_meta = sp500_data['chart']['result'][0]['meta']
+                nas100_meta = nas100_data['chart']['result'][0]['meta']
+
+                sp500_price = sp500_meta.get('regularMarketPrice', 0)
+                sp500_prev = sp500_meta.get('chartPreviousClose', sp500_price)
+                sp500_change = sp500_price - sp500_prev
+                sp500_pct = (sp500_change / sp500_prev * 100) if sp500_prev != 0 else 0
+
+                nas100_price = nas100_meta.get('regularMarketPrice', 0)
+                nas100_prev = nas100_meta.get('chartPreviousClose', nas100_price)
+                nas100_change = nas100_price - nas100_prev
+                nas100_pct = (nas100_change / nas100_prev * 100) if nas100_prev != 0 else 0
+
+                if sp500_price > 1000 and nas100_price > 1000:
+                    return {
+                        'sp500': {'price': sp500_price, 'change': sp500_change, 'pct': sp500_pct},
+                        'nas100': {'price': nas100_price, 'change': nas100_change, 'pct': nas100_pct}
+                    }
+        except Exception as e:
+            pass
+
+        # If all methods fail, return demo data
+        raise Exception("All API methods failed")
+
     except:
         # Fallback to demo data if API fails
         return {
@@ -421,7 +470,14 @@ def get_fallback_news():
 
 # --- SIDEBAR: MARKET DATA & NEWS ---
 with st.sidebar:
-    st.markdown("### ⚡ LIVE MARKET DATA")
+    col_header, col_refresh = st.columns([3, 1])
+    with col_header:
+        st.markdown("### ⚡ LIVE MARKET DATA")
+    with col_refresh:
+        if st.button("🔄", key="refresh_data", help="Refresh market data"):
+            st.cache_data.clear()
+            st.rerun()
+
     st.markdown("---")
 
     market_data = get_market_data()
@@ -429,7 +485,10 @@ with st.sidebar:
     if market_data:
         # Show demo mode indicator if using fallback data
         if market_data.get('demo'):
-            st.markdown('<p style="color: #FFA500; font-size: 0.8rem; text-align: center; margin-bottom: 1rem;">📡 DEMO MODE - Live data unavailable</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #FF0000; font-size: 0.85rem; text-align: center; margin-bottom: 1rem; font-weight: bold;">⚠️ DEMO MODE - API Unavailable</p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #888; font-size: 0.75rem; text-align: center; margin-bottom: 1rem;">Click 🔄 to retry</p>', unsafe_allow_html=True)
+        else:
+            st.markdown('<p style="color: #00FF00; font-size: 0.75rem; text-align: center; margin-bottom: 1rem;">✅ LIVE DATA • Updates every 30s</p>', unsafe_allow_html=True)
 
         # S&P 500
         st.markdown(f"""
