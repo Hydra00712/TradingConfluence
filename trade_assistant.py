@@ -36,17 +36,17 @@ st.markdown("""
         font-size: 3.5rem;
         font-weight: 900;
         text-align: center;
-        color: #FFFFFF;
+        color: #CCCCCC;
         text-transform: uppercase;
         letter-spacing: 8px;
         margin-bottom: 0.5rem;
-        text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        text-shadow: 0 0 15px rgba(200,200,200,0.3);
         font-family: 'Courier New', monospace;
     }
 
     .sub-header {
         text-align: center;
-        color: #AAAAAA;
+        color: #777777;
         font-size: 1.1rem;
         letter-spacing: 3px;
         margin-bottom: 3rem;
@@ -160,14 +160,14 @@ st.markdown("""
 
     /* Headers */
     h1, h2, h3, h4, h5, h6 {
-        color: #FFFFFF !important;
+        color: #CCCCCC !important;
         font-family: 'Courier New', monospace;
         letter-spacing: 2px;
     }
 
     /* Text */
     p, label, span {
-        color: #FFFFFF !important;
+        color: #BBBBBB !important;
     }
 
     /* Input Fields - Selectbox */
@@ -261,43 +261,45 @@ st.markdown('<p class="sub-header">SMART MONEY • CONFLUENCE • PRECISION</p>'
 # --- FUNCTIONS FOR MARKET DATA ---
 @st.cache_data(ttl=60)  # Cache for 1 minute
 def get_market_data():
-    """Fetch real-time market data for S&P 500 and NAS100"""
+    """Fetch real-time market data for S&P 500 and NAS100 - optimized"""
     try:
-        # Using multiple fallback APIs for reliability
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
 
-        # Try Yahoo Finance first
-        sp500_url = "https://query1.finance.yahoo.com/v8/finance/chart/ES=F?interval=1d"
-        nas100_url = "https://query1.finance.yahoo.com/v8/finance/chart/NQ=F?interval=1d"
+        # Optimized: Single request with both symbols
+        url = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=ES=F,NQ=F"
 
-        sp500_response = requests.get(sp500_url, headers=headers, timeout=10)
-        nas100_response = requests.get(nas100_url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)  # Reduced timeout
+        data = response.json()
 
-        sp500_data = sp500_response.json()
-        nas100_data = nas100_response.json()
+        quotes = data['quoteResponse']['result']
 
-        # Extract data with error handling
-        sp500_result = sp500_data['chart']['result'][0]
-        sp500_meta = sp500_result['meta']
-        sp500_price = sp500_meta.get('regularMarketPrice', sp500_meta.get('previousClose', 0))
-        sp500_prev = sp500_meta.get('chartPreviousClose', sp500_meta.get('previousClose', sp500_price))
-        sp500_change = sp500_price - sp500_prev
-        sp500_pct = (sp500_change / sp500_prev * 100) if sp500_prev != 0 else 0
+        # Parse ES (S&P 500)
+        sp500_quote = next((q for q in quotes if q['symbol'] == 'ES=F'), None)
+        if sp500_quote:
+            sp500_price = sp500_quote.get('regularMarketPrice', 0)
+            sp500_prev = sp500_quote.get('regularMarketPreviousClose', sp500_price)
+            sp500_change = sp500_quote.get('regularMarketChange', 0)
+            sp500_pct = sp500_quote.get('regularMarketChangePercent', 0)
+        else:
+            raise Exception("No SP500 data")
 
-        nas100_result = nas100_data['chart']['result'][0]
-        nas100_meta = nas100_result['meta']
-        nas100_price = nas100_meta.get('regularMarketPrice', nas100_meta.get('previousClose', 0))
-        nas100_prev = nas100_meta.get('chartPreviousClose', nas100_meta.get('previousClose', nas100_price))
-        nas100_change = nas100_price - nas100_prev
-        nas100_pct = (nas100_change / nas100_prev * 100) if nas100_prev != 0 else 0
+        # Parse NQ (Nasdaq)
+        nas100_quote = next((q for q in quotes if q['symbol'] == 'NQ=F'), None)
+        if nas100_quote:
+            nas100_price = nas100_quote.get('regularMarketPrice', 0)
+            nas100_prev = nas100_quote.get('regularMarketPreviousClose', nas100_price)
+            nas100_change = nas100_quote.get('regularMarketChange', 0)
+            nas100_pct = nas100_quote.get('regularMarketChangePercent', 0)
+        else:
+            raise Exception("No NAS100 data")
 
         return {
             'sp500': {'price': sp500_price, 'change': sp500_change, 'pct': sp500_pct},
             'nas100': {'price': nas100_price, 'change': nas100_change, 'pct': nas100_pct}
         }
-    except Exception as e:
+    except:
         # Fallback to demo data if API fails
         return {
             'sp500': {'price': 5850.25, 'change': 12.50, 'pct': 0.21},
@@ -307,32 +309,29 @@ def get_market_data():
 
 @st.cache_data(ttl=1800)  # Cache for 30 minutes
 def get_futures_news():
-    """Fetch real futures-related news from the past week"""
+    """Fetch ES and NQ futures news from the past week - optimized for speed"""
     try:
-        # Using multiple sources for comprehensive news coverage
+        from datetime import datetime
         news_items = []
 
-        # Method 1: Yahoo Finance News API
-        try:
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
 
-            # Get news for S&P 500 and Nasdaq futures
-            symbols = ['ES=F', 'NQ=F', '^GSPC', '^IXIC']
+        # Only get news for ES and NQ futures (faster - fewer API calls)
+        symbols = ['ES=F', 'NQ=F']
 
-            for symbol in symbols:
-                url = f"https://query1.finance.yahoo.com/v1/finance/search?q={symbol}&quotesCount=0&newsCount=10"
-                response = requests.get(url, headers=headers, timeout=10)
+        for symbol in symbols:
+            try:
+                url = f"https://query1.finance.yahoo.com/v1/finance/search?q={symbol}&quotesCount=0&newsCount=8"
+                response = requests.get(url, headers=headers, timeout=5)  # Reduced timeout
 
                 if response.status_code == 200:
                     data = response.json()
                     if 'news' in data:
-                        for item in data['news'][:5]:  # Get top 5 from each
-                            # Calculate time ago
+                        for item in data['news'][:8]:  # Get top 8 from each
                             pub_time = item.get('providerPublishTime', 0)
                             if pub_time:
-                                from datetime import datetime, timedelta
                                 pub_date = datetime.fromtimestamp(pub_time)
                                 now = datetime.now()
                                 diff = now - pub_date
@@ -340,24 +339,27 @@ def get_futures_news():
                                 # Only include news from past week
                                 if diff.days <= 7:
                                     if diff.days > 0:
-                                        time_ago = f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+                                        time_ago = f"{diff.days}d ago"
                                     elif diff.seconds >= 3600:
                                         hours = diff.seconds // 3600
-                                        time_ago = f"{hours} hour{'s' if hours > 1 else ''} ago"
+                                        time_ago = f"{hours}h ago"
                                     else:
-                                        minutes = diff.seconds // 60
-                                        time_ago = f"{minutes} min ago"
+                                        minutes = max(1, diff.seconds // 60)
+                                        time_ago = f"{minutes}m ago"
 
-                                    news_items.append({
-                                        'title': item.get('title', 'No title'),
-                                        'time': time_ago,
-                                        'publisher': item.get('publisher', 'Unknown'),
-                                        'link': item.get('link', '#')
-                                    })
-        except Exception as e:
-            pass
+                                    # Filter: only include if title mentions futures, S&P, Nasdaq, ES, or NQ
+                                    title = item.get('title', '')
+                                    keywords = ['future', 's&p', 'nasdaq', 'sp500', 'nas100', 'es', 'nq', 'market', 'index']
+                                    if any(keyword in title.lower() for keyword in keywords):
+                                        news_items.append({
+                                            'title': title,
+                                            'time': time_ago,
+                                            'publisher': item.get('publisher', 'Unknown'),
+                                        })
+            except:
+                continue  # Skip failed requests, don't break entire function
 
-        # Remove duplicates based on title
+        # Remove duplicates
         seen_titles = set()
         unique_news = []
         for item in news_items:
@@ -365,10 +367,9 @@ def get_futures_news():
                 seen_titles.add(item['title'])
                 unique_news.append(item)
 
-        # Sort by most recent (assuming earlier in list = more recent)
-        return unique_news[:20] if unique_news else get_fallback_news()
+        return unique_news[:15] if unique_news else get_fallback_news()
 
-    except Exception as e:
+    except:
         return get_fallback_news()
 
 def get_fallback_news():
