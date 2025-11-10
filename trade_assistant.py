@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Futuristic Black & White UI
+# Futuristic Black & White UI - Optimized for Performance
 st.markdown("""
 <style>
     /* Global Styles */
@@ -30,6 +30,11 @@ st.markdown("""
     /* Hide empty containers */
     .element-container:has(> .stMarkdown > div:empty) {
         display: none;
+    }
+
+    /* Performance optimizations */
+    * {
+        will-change: auto;
     }
 
     /* Main Header */
@@ -264,8 +269,8 @@ def get_market_data():
             sp500_url = "https://query1.finance.yahoo.com/v8/finance/chart/ES=F?interval=1m&range=1d"
             nas100_url = "https://query1.finance.yahoo.com/v8/finance/chart/NQ=F?interval=1m&range=1d"
 
-            sp500_resp = requests.get(sp500_url, headers=headers, timeout=10)
-            nas100_resp = requests.get(nas100_url, headers=headers, timeout=10)
+            sp500_resp = requests.get(sp500_url, headers=headers, timeout=5)
+            nas100_resp = requests.get(nas100_url, headers=headers, timeout=5)
 
             if sp500_resp.status_code == 200 and nas100_resp.status_code == 200:
                 sp500_data = sp500_resp.json()
@@ -306,8 +311,8 @@ def get_market_data():
             sp500_url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?interval=1m&range=1d"
             nas100_url = "https://query1.finance.yahoo.com/v8/finance/chart/%5EIXIC?interval=1m&range=1d"
 
-            sp500_resp = requests.get(sp500_url, headers=headers, timeout=10)
-            nas100_resp = requests.get(nas100_url, headers=headers, timeout=10)
+            sp500_resp = requests.get(sp500_url, headers=headers, timeout=5)
+            nas100_resp = requests.get(nas100_url, headers=headers, timeout=5)
 
             if sp500_resp.status_code == 200 and nas100_resp.status_code == 200:
                 sp500_data = sp500_resp.json()
@@ -401,13 +406,13 @@ def get_futures_news():
 
         for symbol in symbols:
             try:
-                url = f"https://query1.finance.yahoo.com/v1/finance/search?q={symbol}&quotesCount=0&newsCount=8"
-                response = requests.get(url, headers=headers, timeout=5)  # Reduced timeout
+                url = f"https://query1.finance.yahoo.com/v1/finance/search?q={symbol}&quotesCount=0&newsCount=6"
+                response = requests.get(url, headers=headers, timeout=3)  # Reduced timeout to 3s
 
                 if response.status_code == 200:
                     data = response.json()
                     if 'news' in data:
-                        for item in data['news'][:8]:  # Get top 8 from each
+                        for item in data['news'][:6]:  # Get top 6 from each (faster processing)
                             pub_time = item.get('providerPublishTime', 0)
                             if pub_time:
                                 pub_date = datetime.fromtimestamp(pub_time)
@@ -439,15 +444,18 @@ def get_futures_news():
             except:
                 continue  # Skip failed requests, don't break entire function
 
-        # Remove duplicates
-        seen_titles = set()
+        # Remove duplicates (optimized with dict)
         unique_news = []
+        seen_titles = set()
         for item in news_items:
-            if item['title'] not in seen_titles:
-                seen_titles.add(item['title'])
+            title = item['title']
+            if title not in seen_titles:
+                seen_titles.add(title)
                 unique_news.append(item)
+                if len(unique_news) >= 12:  # Stop early once we have enough
+                    break
 
-        return unique_news[:15] if unique_news else get_fallback_news()
+        return unique_news if unique_news else get_fallback_news()
 
     except:
         return get_fallback_news()
@@ -536,7 +544,7 @@ with st.sidebar:
     st.markdown('<div style="max-height: 500px; overflow-y: auto; padding-right: 0.5rem;">', unsafe_allow_html=True)
 
     if news:
-        for item in news[:15]:  # Show top 15 news items
+        for item in news[:12]:  # Show top 12 news items (faster rendering)
             publisher = item.get('publisher', '')
             publisher_text = f'<span style="color: #666; font-size: 0.75rem;">• {publisher}</span>' if publisher else ''
 
@@ -568,11 +576,8 @@ with st.sidebar:
 
     st.markdown(f'<p style="color: #666; font-size: 0.75rem; text-align: center; margin-top: 1rem;">Last updated: {datetime.now().strftime("%H:%M:%S")}</p>', unsafe_allow_html=True)
 
-    # Auto-refresh mechanism - only if live data is available
+    # Auto-refresh mechanism - only if live data is available (optimized)
     if not market_data.get('demo'):
-        # Add a placeholder for auto-refresh countdown
-        refresh_placeholder = st.empty()
-
         # Initialize session state for countdown
         if 'last_refresh' not in st.session_state:
             st.session_state.last_refresh = time.time()
@@ -581,8 +586,8 @@ with st.sidebar:
         time_elapsed = time.time() - st.session_state.last_refresh
         time_remaining = max(0, 10 - int(time_elapsed))
 
-        # Show countdown
-        refresh_placeholder.markdown(
+        # Show countdown (simplified)
+        st.markdown(
             f'<p style="color: #00FF00; font-size: 0.7rem; text-align: center; margin-top: 0.5rem;">Next update in {time_remaining}s</p>',
             unsafe_allow_html=True
         )
@@ -590,7 +595,6 @@ with st.sidebar:
         # Auto-refresh after 10 seconds
         if time_elapsed >= 10:
             st.session_state.last_refresh = time.time()
-            time.sleep(0.1)
             st.rerun()
 
 # --- MAIN CONTENT: INPUTS ---
