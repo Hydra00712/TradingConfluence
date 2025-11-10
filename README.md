@@ -1,9 +1,28 @@
 # 💼 Wall Street Bias Checker
 
-A smart trade confirmation assistant built for multi-timeframe Smart Money trading strategies.
+A professional-grade trade confirmation assistant built for multi-timeframe Smart Money trading strategies with real-time market data and news integration.
 
-## Features
+## 🚀 New Features (v2.0)
 
+### Real-Time Market Data
+✅ **Live S&P 500 (ES) prices** - Real-time price, change, and percentage movement
+✅ **Live NAS100 (NQ) prices** - Real-time futures data
+✅ **Auto SMT Detection** - Automatically detects divergence between ES and NAS
+✅ **60-second refresh** - Market data updates every minute
+
+### News Integration
+✅ **Futures news feed** - Latest market-moving news for ES and NQ
+✅ **Auto-refresh** - News updates every 5 minutes
+✅ **Timestamped updates** - Know exactly when news broke
+
+### Enhanced UI/UX
+✅ **Wide layout** - Better use of screen space with sidebar
+✅ **Professional styling** - Dark theme with gradient accents
+✅ **Score breakdown** - Detailed analysis of each confluence factor
+✅ **Visual indicators** - Color-coded metrics (green/red for bullish/bearish)
+✅ **Responsive design** - Works perfectly on mobile and desktop
+
+### Core Trading Features
 ✅ Multi-timeframe bias alignment (Daily, 4H, 1H)
 ✅ Liquidity sweep detection
 ✅ Displacement & Fair Value Gap (FVG) confirmation
@@ -12,7 +31,14 @@ A smart trade confirmation assistant built for multi-timeframe Smart Money tradi
 ✅ Confluence scoring system (0-12 points)
 ✅ Clear trade signals: GO LONG, GO SHORT, or NO TRADE
 
-## Quick Start
+## 🌐 Live Demo
+
+**Access the app anywhere, anytime:**
+👉 **[https://tradingconfluence.streamlit.app](https://tradingconfluence.streamlit.app)**
+
+The app is deployed on Streamlit Cloud and accessible 24/7 from any device!
+
+## Quick Start (Local Development)
 
 ### 1. Install Dependencies
 
@@ -26,7 +52,7 @@ pip install -r requirements.txt
 streamlit run trade_assistant.py
 ```
 
-The app will automatically open in your browser at `http://localhost:8501`
+The app will automatically open in your browser at `http://localhost:8502`
 
 ### 3. Access from iPhone (Same Wi-Fi)
 
@@ -36,9 +62,9 @@ The app will automatically open in your browser at `http://localhost:8501`
 
 2. On your iPhone browser, go to:
    ```
-   http://YOUR_PC_IP:8501
+   http://YOUR_PC_IP:8502
    ```
-   Example: `http://192.168.1.100:8501`
+   Example: `http://192.168.1.100:8502`
 
 ## How It Works
 
