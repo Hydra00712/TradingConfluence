@@ -351,24 +351,36 @@ def analyze_news_sentiment(title):
 
     # Bullish keywords (price going UP)
     bullish_keywords = [
-        'rally', 'surge', 'gain', 'rise', 'jump', 'climb', 'soar', 'advance',
-        'boost', 'strength', 'strong', 'beat', 'positive', 'optimis', 'bull',
-        'record high', 'breakout', 'momentum', 'upgrade', 'outperform'
+        'rally', 'rallies', 'surge', 'surges', 'gain', 'gains', 'rise', 'rises', 'rising',
+        'jump', 'jumps', 'climb', 'climbs', 'soar', 'soars', 'advance', 'advances',
+        'boost', 'boosts', 'strength', 'strong', 'stronger', 'beat', 'beats', 'positive',
+        'optimis', 'optimistic', 'bull', 'bullish', 'record high', 'breakout', 'breaks out',
+        'momentum', 'upgrade', 'upgrades', 'outperform', 'outperforms', 'higher', 'up',
+        'rebound', 'rebounds', 'recover', 'recovery', 'growth', 'grows', 'extend', 'extends'
     ]
 
     # Bearish keywords (price going DOWN)
     bearish_keywords = [
-        'fall', 'drop', 'plunge', 'decline', 'tumble', 'slide', 'slump', 'sink',
-        'loss', 'weak', 'concern', 'fear', 'worry', 'risk', 'bear', 'crash',
-        'sell-off', 'selloff', 'downturn', 'downgrade', 'miss', 'disappoint'
+        'fall', 'falls', 'falling', 'drop', 'drops', 'dropping', 'plunge', 'plunges',
+        'decline', 'declines', 'declining', 'tumble', 'tumbles', 'slide', 'slides',
+        'slump', 'slumps', 'sink', 'sinks', 'loss', 'losses', 'lose', 'weak', 'weaker',
+        'weakness', 'concern', 'concerns', 'fear', 'fears', 'worry', 'worries', 'risk',
+        'risks', 'bear', 'bearish', 'crash', 'crashes', 'sell-off', 'selloff', 'selling',
+        'downturn', 'downgrade', 'downgrades', 'miss', 'misses', 'disappoint', 'disappoints',
+        'lower', 'down', 'pressure', 'pressured', 'retreat', 'retreats'
     ]
 
     bullish_count = sum(1 for word in bullish_keywords if word in title_lower)
     bearish_count = sum(1 for word in bearish_keywords if word in title_lower)
 
-    if bullish_count > bearish_count:
+    # If we find ANY keyword, classify it (more aggressive)
+    if bullish_count > 0 and bullish_count > bearish_count:
         return 'bullish'
-    elif bearish_count > bullish_count:
+    elif bearish_count > 0 and bearish_count > bullish_count:
+        return 'bearish'
+    elif bullish_count > 0 and bearish_count == 0:
+        return 'bullish'
+    elif bearish_count > 0 and bullish_count == 0:
         return 'bearish'
     else:
         return 'neutral'
