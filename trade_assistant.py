@@ -3,7 +3,7 @@
 
 import streamlit as st
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import time
 
@@ -126,6 +126,38 @@ st.markdown("""
         font-weight: bold;
         font-size: 1.3rem;
         text-shadow: 0 0 10px rgba(255,0,0,0.5);
+    }
+
+    /* Warning Banner */
+    .warning-banner {
+        background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
+        border: 2px solid #FF0000;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        text-align: center;
+        animation: pulse-warning 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-warning {
+        0%, 100% { box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+        50% { box-shadow: 0 0 40px rgba(255,0,0,0.8); }
+    }
+
+    .warning-title {
+        color: #FFFFFF;
+        font-size: 2rem;
+        font-weight: 900;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+    }
+
+    .warning-text {
+        color: #FFFFFF;
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1.6;
     }
 
     /* Result Box */
@@ -390,6 +422,115 @@ def analyze_news_sentiment(title):
     else:
         return 'neutral'
 
+def check_trading_conditions():
+    """Check for bank holidays and low volume conditions - returns warning dict"""
+    from datetime import datetime, timedelta
+
+    # US Bank Holidays 2024-2025
+    us_holidays = [
+        # 2024
+        datetime(2024, 1, 1),   # New Year's Day
+        datetime(2024, 1, 15),  # MLK Day
+        datetime(2024, 2, 19),  # Presidents Day
+        datetime(2024, 3, 29),  # Good Friday
+        datetime(2024, 5, 27),  # Memorial Day
+        datetime(2024, 6, 19),  # Juneteenth
+        datetime(2024, 7, 4),   # Independence Day
+        datetime(2024, 9, 2),   # Labor Day
+        datetime(2024, 11, 28), # Thanksgiving
+        datetime(2024, 12, 25), # Christmas
+        # 2025
+        datetime(2025, 1, 1),   # New Year's Day
+        datetime(2025, 1, 20),  # MLK Day
+        datetime(2025, 2, 17),  # Presidents Day
+        datetime(2025, 4, 18),  # Good Friday
+        datetime(2025, 5, 26),  # Memorial Day
+        datetime(2025, 6, 19),  # Juneteenth
+        datetime(2025, 7, 4),   # Independence Day
+        datetime(2025, 9, 1),   # Labor Day
+        datetime(2025, 11, 27), # Thanksgiving
+        datetime(2025, 12, 25), # Christmas
+    ]
+
+    now = datetime.now()
+    today = now.date()
+
+    warnings = []
+    severity = 'none'  # none, low, medium, high
+
+    # Check if today is a bank holiday
+    for holiday in us_holidays:
+        if holiday.date() == today:
+            warnings.append(f"🚨 TODAY IS A US BANK HOLIDAY ({holiday.strftime('%B %d, %Y')})")
+            severity = 'high'
+            break
+
+    # Check if tomorrow is a bank holiday (half-day trading often)
+    tomorrow = (now + timedelta(days=1)).date()
+    for holiday in us_holidays:
+        if holiday.date() == tomorrow:
+            warnings.append(f"⚠️ TOMORROW IS A US BANK HOLIDAY - Expect low volume today")
+            if severity == 'none':
+                severity = 'medium'
+            break
+
+    # Check if day after tomorrow is a bank holiday (3-day weekend)
+    day_after = (now + timedelta(days=2)).date()
+    for holiday in us_holidays:
+        if holiday.date() == day_after:
+            warnings.append(f"⚠️ 3-DAY WEEKEND AHEAD - Volume may be lower")
+            if severity == 'none':
+                severity = 'low'
+            break
+
+    # Check for Friday before long weekend
+    if now.weekday() == 4:  # Friday
+        monday = (now + timedelta(days=3)).date()
+        for holiday in us_holidays:
+            if holiday.date() == monday:
+                warnings.append(f"⚠️ LONG WEEKEND AHEAD - Friday before holiday has low volume")
+                if severity == 'none':
+                    severity = 'medium'
+                break
+
+    # Check for day after holiday (often low volume)
+    yesterday = (now - timedelta(days=1)).date()
+    for holiday in us_holidays:
+        if holiday.date() == yesterday:
+            warnings.append(f"⚠️ DAY AFTER HOLIDAY - Volume may still be low")
+            if severity == 'none':
+                severity = 'low'
+            break
+
+    # Check for early/late hours (low volume times)
+    current_hour = now.hour
+    if 0 <= current_hour < 9:
+        warnings.append(f"⏰ PRE-MARKET HOURS - Volume is typically very low")
+        if severity == 'none':
+            severity = 'low'
+    elif 16 <= current_hour < 24:
+        warnings.append(f"⏰ AFTER-HOURS - Volume is typically very low")
+        if severity == 'none':
+            severity = 'low'
+
+    return {
+        'has_warning': len(warnings) > 0,
+        'warnings': warnings,
+        'severity': severity,
+        'recommendation': get_trading_recommendation(severity)
+    }
+
+def get_trading_recommendation(severity):
+    """Get trading recommendation based on severity"""
+    if severity == 'high':
+        return "🛑 DO NOT TRADE - Market is closed or extremely low volume"
+    elif severity == 'medium':
+        return "⚠️ TRADE WITH EXTREME CAUTION - Significantly reduced volume expected"
+    elif severity == 'low':
+        return "⚠️ BE CAREFUL - Volume may be lower than usual"
+    else:
+        return "✅ Normal trading conditions"
+
 @st.cache_data(ttl=1800)  # Cache for 30 minutes
 def get_futures_news():
     """Fetch ES and NQ futures news from the past week - optimized for speed"""
@@ -599,6 +740,45 @@ with st.sidebar:
 
 # --- MAIN CONTENT: INPUTS ---
 st.markdown("---")
+
+# Check trading conditions (bank holidays, low volume)
+trading_conditions = check_trading_conditions()
+
+# Display warning banner if needed
+if trading_conditions['has_warning']:
+    if trading_conditions['severity'] == 'high':
+        st.markdown(f"""
+        <div class="warning-banner">
+            <div class="warning-title">🚨 DO NOT TRADE 🚨</div>
+            <div class="warning-text">
+                {'<br>'.join(trading_conditions['warnings'])}<br><br>
+                <strong>{trading_conditions['recommendation']}</strong><br>
+                Market conditions are NOT suitable for trading. Stay out!
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    elif trading_conditions['severity'] == 'medium':
+        st.markdown(f"""
+        <div class="warning-banner" style="background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%); border-color: #FFA500;">
+            <div class="warning-title">⚠️ CAUTION ⚠️</div>
+            <div class="warning-text">
+                {'<br>'.join(trading_conditions['warnings'])}<br><br>
+                <strong>{trading_conditions['recommendation']}</strong><br>
+                Reduce position size and be extra selective with entries.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    elif trading_conditions['severity'] == 'low':
+        st.markdown(f"""
+        <div class="warning-banner" style="background: linear-gradient(135deg, #FFAA00 0%, #FF9900 100%); border-color: #FFAA00;">
+            <div class="warning-title" style="font-size: 1.5rem;">⚠️ HEADS UP ⚠️</div>
+            <div class="warning-text" style="font-size: 1rem;">
+                {'<br>'.join(trading_conditions['warnings'])}<br><br>
+                <strong>{trading_conditions['recommendation']}</strong>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
 st.markdown('<h2 style="text-align: center; letter-spacing: 4px; margin: 2rem 0;">⚙️ CONFLUENCE PARAMETERS ⚙️</h2>', unsafe_allow_html=True)
 st.markdown("---")
 
