@@ -1101,8 +1101,8 @@ with result_col2:
         st.markdown(f'''
         <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #00FF00; text-align: center;">
             <p style="color: #00FF00; font-size: 1.2rem; margin: 0; font-weight: bold;">🎯 PERFECT SETUP</p>
-            <p style="color: #FFFFFF; margin: 0.5rem 0 0 0;">All 6 steps confirmed</p>
-            <p style="color: #00FF00; margin: 0.5rem 0 0 0; font-size: 0.9rem;">✅ Risk: {risk_percent} | SL: Beyond liquidity sweep | TP: Next liquidity zone</p>
+            <p style="color: #FFFFFF; margin: 0.5rem 0 0 0;">All 7 steps confirmed</p>
+            <p style="color: #00FF00; margin: 0.5rem 0 0 0; font-size: 0.9rem;">✅ Risk: 1-2% max | SL: Beyond liquidity sweep | TP: Next liquidity zone</p>
         </div>
         ''', unsafe_allow_html=True)
     elif score >= 6:
