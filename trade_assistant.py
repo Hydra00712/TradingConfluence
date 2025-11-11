@@ -1,5 +1,5 @@
-# Trade Confirmation Assistant – "Wall Street Bias Checker"
-# Made for Adam's Smart Money Strategy (Multi-TF, Liquidity, Displacement, FVG, SMT)
+# VWAP + FVG + Liquidity Scalping Assistant
+# Wall Street-Grade Scalping Strategy - 6 Step System
 
 import streamlit as st
 import requests
@@ -8,8 +8,8 @@ import json
 import time
 
 st.set_page_config(
-    page_title="Wall Street Bias Checker",
-    page_icon="💼",
+    page_title="VWAP + FVG + Liquidity Scalping",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -281,8 +281,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h1 class="main-header">WALL STREET BIAS CHECKER</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">SMART MONEY • CONFLUENCE • PRECISION</p>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-header">VWAP + FVG + LIQUIDITY SCALPING</h1>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">6-STEP WALL STREET SYSTEM • PRECISION ENTRIES • HIGH PROBABILITY</p>', unsafe_allow_html=True)
 
 # --- FUNCTIONS FOR MARKET DATA ---
 @st.cache_data(ttl=10)  # Cache for 10 seconds for real-time updates
@@ -779,72 +779,182 @@ if trading_conditions['has_warning']:
         </div>
         """, unsafe_allow_html=True)
 
-st.markdown('<h2 style="text-align: center; letter-spacing: 4px; margin: 2rem 0;">⚙️ CONFLUENCE PARAMETERS ⚙️</h2>', unsafe_allow_html=True)
+st.markdown('<h2 style="text-align: center; letter-spacing: 4px; margin: 2rem 0;">⚙️ VWAP + FVG + LIQUIDITY SCALPING ⚙️</h2>', unsafe_allow_html=True)
+st.markdown('<p style="text-align: center; color: #888; font-size: 0.9rem; margin-top: -1rem;">Wall Street-Grade Scalping Strategy</p>', unsafe_allow_html=True)
 st.markdown("---")
 
 col1, col2 = st.columns(2, gap="large")
 
 with col1:
-    st.markdown("### 📊 TIMEFRAME BIASES")
-    daily = st.selectbox("🔹 Daily Bias", ["Bullish", "Bearish", "Neutral"], key="daily")
-    h4 = st.selectbox("🔹 4H Bias", ["Bullish", "Bearish", "Neutral"], key="h4")
-    h1 = st.selectbox("🔹 1H Structure", ["Bullish", "Bearish", "Choppy/Neutral"], key="h1")
+    st.markdown("### 📊 STEP 1: TREND (1H-4H)")
+    st.markdown('<p style="color: #888; font-size: 0.85rem; margin-top: -0.5rem;">Check higher timeframe VWAP</p>', unsafe_allow_html=True)
+    vwap_trend = st.selectbox(
+        "🔹 Price vs VWAP (1H-4H)",
+        ["Above VWAP (Bullish)", "Below VWAP (Bearish)", "Chopping at VWAP (No Trade)"],
+        key="vwap_trend"
+    )
 
     st.markdown("---")
 
-    st.markdown("### 📉 MARKET CONTEXT")
-    liquidity = st.selectbox("🔹 Liquidity Sweep", ["None", "Equal Highs (Sell Liquidity)", "Equal Lows (Buy Liquidity)"], key="liq")
-    displacement = st.radio("🔹 Strong Displacement?", ["Yes", "No"], key="disp", horizontal=True)
-    fvg = st.radio("🔹 Fair Value Gap?", ["Yes", "No"], key="fvg", horizontal=True)
-    fvg_dir = st.selectbox("🔹 FVG Direction", ["Bullish", "Bearish", "None"], key="fvg_dir")
+    st.markdown("### 📉 STEP 2: FVG LOCATION")
+    st.markdown('<p style="color: #888; font-size: 0.85rem; margin-top: -0.5rem;">Identify unfilled Fair Value Gap</p>', unsafe_allow_html=True)
+    fvg_present = st.radio("🔹 FVG Present on 1H-4H?", ["Yes", "No"], key="fvg_present", horizontal=True)
+
+    if fvg_present == "Yes":
+        fvg_direction = st.selectbox(
+            "🔹 FVG Direction",
+            ["Bullish FVG (Gap Up)", "Bearish FVG (Gap Down)"],
+            key="fvg_direction"
+        )
+        fvg_alignment = st.radio(
+            "🔹 FVG Aligns with Trend?",
+            ["Yes (Trend Trade)", "No (Fade/Reversal)"],
+            key="fvg_alignment",
+            horizontal=True
+        )
+    else:
+        fvg_direction = None
+        fvg_alignment = None
+
+    st.markdown("---")
+
+    st.markdown("### 💧 STEP 3: LIQUIDITY ZONES")
+    st.markdown('<p style="color: #888; font-size: 0.85rem; margin-top: -0.5rem;">Identify stop-hunt zones near FVG</p>', unsafe_allow_html=True)
+    liquidity_present = st.radio("🔹 Liquidity Zone Near FVG?", ["Yes", "No"], key="liq_present", horizontal=True)
+
+    if liquidity_present == "Yes":
+        liquidity_type = st.selectbox(
+            "🔹 Liquidity Type",
+            [
+                "Swing High (Sell Stops Above)",
+                "Swing Low (Buy Stops Below)",
+                "Equal Highs (Obvious Resistance)",
+                "Equal Lows (Obvious Support)",
+                "Previous Day High/Low"
+            ],
+            key="liq_type"
+        )
+    else:
+        liquidity_type = None
 
 with col2:
-    st.markdown("### 🔁 CORRELATION CHECK")
-    smt = st.selectbox("🔹 SMT Divergence (ES & NAS)", ["Confirmed (Same Direction)", "Divergent", "Not Checked"], key="smt")
+    st.markdown("### 🎯 STEP 4: PRICE REACTION (1M-5M)")
+    st.markdown('<p style="color: #888; font-size: 0.85rem; margin-top: -0.5rem;">Wait for liquidity sweep + rejection</p>', unsafe_allow_html=True)
+
+    price_entered_fvg = st.radio("🔹 Price Entered FVG?", ["Yes", "No"], key="price_fvg", horizontal=True)
+    liquidity_swept = st.radio("🔹 Liquidity Swept?", ["Yes", "No"], key="liq_swept", horizontal=True)
+    rejection_candle = st.radio("🔹 Rejection Candle After Sweep?", ["Yes", "No"], key="rejection", horizontal=True)
 
     st.markdown("---")
 
-    st.markdown("### 🕓 EXECUTION FILTERS")
-    session = st.selectbox("🔹 Trading Session", ["London", "NY AM (14:30–17:00 UTC+1)", "NY PM (19:00–21:00 UTC+1)", "Outside Session"], key="session")
-    confirmation = st.radio("🔹 Lower TF Confirmation (1M-5M)?", ["Yes", "No"], key="conf", horizontal=True)
+    st.markdown("### ✅ STEP 5: ENTRY CONFIRMATION")
+    st.markdown('<p style="color: #888; font-size: 0.85rem; margin-top: -0.5rem;">Final checks before entry</p>', unsafe_allow_html=True)
+
+    micro_structure = st.selectbox(
+        "🔹 1M-5M Structure After Rejection",
+        ["Strong Reversal (Best)", "Weak Reversal", "No Clear Move"],
+        key="micro_structure"
+    )
+
+    smt_check = st.radio("🔹 ES & NQ Aligned?", ["Yes (Confirmed)", "No (Divergent)", "Not Checked"], key="smt", horizontal=True)
+
+    st.markdown("---")
+
+    st.markdown("### 🕐 STEP 6: RISK MANAGEMENT")
+    st.markdown('<p style="color: #888; font-size: 0.85rem; margin-top: -0.5rem;">Position sizing & timing</p>', unsafe_allow_html=True)
+
+    risk_percent = st.selectbox("🔹 Risk Per Trade", ["1%", "1.5%", "2%"], key="risk")
+    session_time = st.selectbox(
+        "🔹 Trading Session",
+        ["London Open (8-11am GMT)", "NY Open (9:30am-12pm EST)", "NY PM (2-4pm EST)", "Outside Prime Time"],
+        key="session"
+    )
 
 st.markdown("---")
 
-# --- LOGIC ---
-signal = "🚫 No Trade – Missing Confluence or Wrong Timing"
+# --- VWAP + FVG + LIQUIDITY LOGIC ---
+signal = "🚫 No Trade"
 color = "red"
 score = 0
+max_score = 10
+trade_direction = None
 
-# Base score system
-if daily == h4 and daily != "Neutral": score += 3
-if h1 == daily: score += 2
-if liquidity.startswith("Equal Lows") and daily == "Bullish": score += 2
-if liquidity.startswith("Equal Highs") and daily == "Bearish": score += 2
-if displacement == "Yes": score += 2
-if fvg == "Yes" and fvg_dir == daily: score += 2
-if smt == "Confirmed (Same Direction)": score += 1
-if session.startswith("NY"): score += 1
-if confirmation == "Yes": score += 2
+# STEP 1: Trend Check (2 points)
+if vwap_trend == "Above VWAP (Bullish)":
+    score += 2
+    trade_direction = "LONG"
+elif vwap_trend == "Below VWAP (Bearish)":
+    score += 2
+    trade_direction = "SHORT"
+else:
+    trade_direction = None
 
-# Determine final trade bias
-if score >= 10 and daily == "Bullish":
+# STEP 2: FVG Present and Aligned (3 points total)
+if fvg_present == "Yes":
+    score += 1  # FVG exists
+
+    # Check if FVG aligns with trend (trend trade) or opposite (reversal)
+    if fvg_alignment == "Yes (Trend Trade)":
+        # Bullish trend + Bullish FVG OR Bearish trend + Bearish FVG
+        if (trade_direction == "LONG" and fvg_direction == "Bullish FVG (Gap Up)") or \
+           (trade_direction == "SHORT" and fvg_direction == "Bearish FVG (Gap Down)"):
+            score += 2  # Perfect alignment
+    elif fvg_alignment == "No (Fade/Reversal)":
+        # Counter-trend trade (riskier but can work)
+        score += 1  # Partial credit for reversal setup
+
+# STEP 3: Liquidity Present (2 points)
+if liquidity_present == "Yes":
+    score += 2
+
+# STEP 4: Price Action (2 points total)
+if price_entered_fvg == "Yes":
+    score += 0.5
+if liquidity_swept == "Yes":
+    score += 0.5
+if rejection_candle == "Yes":
+    score += 1
+
+# STEP 5: Entry Confirmation (1.5 points total)
+if micro_structure == "Strong Reversal (Best)":
+    score += 1
+elif micro_structure == "Weak Reversal":
+    score += 0.5
+
+if smt_check == "Yes (Confirmed)":
+    score += 0.5
+
+# STEP 6: Session Timing (0.5 points)
+if session_time in ["London Open (8-11am GMT)", "NY Open (9:30am-12pm EST)", "NY PM (2-4pm EST)"]:
+    score += 0.5
+
+# Convert to integer for display
+score = int(score * 2) / 2  # Round to nearest 0.5
+
+# Determine final trade signal
+if score >= 8 and trade_direction == "LONG":
     signal = "🚀 GO LONG"
-    subtitle = "HIGH PROBABILITY BUY SETUP"
+    subtitle = "HIGH PROBABILITY BUY - All Conditions Met"
     color = "#00FF00"
     box_class = "result-box-green"
-elif score >= 10 and daily == "Bearish":
+elif score >= 8 and trade_direction == "SHORT":
     signal = "📉 GO SHORT"
-    subtitle = "HIGH PROBABILITY SELL SETUP"
+    subtitle = "HIGH PROBABILITY SELL - All Conditions Met"
     color = "#00FF00"
     box_class = "result-box-green"
-elif 7 <= score < 10:
-    signal = "⚠️ CAUTION"
-    subtitle = "WEAK CONFLUENCE - REDUCE SIZE"
+elif 6 <= score < 8 and trade_direction:
+    signal = f"⚠️ CAUTION - {trade_direction}"
+    subtitle = "Moderate Setup - Reduce Position Size to 0.5-1%"
+    color = "#FFA500"
+    box_class = "result-box-orange"
+elif 4 <= score < 6 and trade_direction:
+    signal = "⚠️ WEAK SETUP"
+    subtitle = "Low Probability - Consider Waiting"
     color = "#FFA500"
     box_class = "result-box-orange"
 else:
     signal = "🚫 NO TRADE"
-    subtitle = "INSUFFICIENT CONFLUENCE"
+    subtitle = "Missing Key Elements - Wait for Better Setup"
     color = "#FF0000"
     box_class = "result-box-red"
 
@@ -866,18 +976,30 @@ with result_col2:
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Progress bar with label
-    st.markdown(f"<p style='text-align:center; font-size:1.5rem; font-weight:bold; color: #FFFFFF; letter-spacing: 2px;'>CONFLUENCE SCORE: {score}/12</p>", unsafe_allow_html=True)
-    st.progress(min(score / 12, 1.0))
+    st.markdown(f"<p style='text-align:center; font-size:1.5rem; font-weight:bold; color: #FFFFFF; letter-spacing: 2px;'>SETUP SCORE: {score}/{max_score}</p>", unsafe_allow_html=True)
+    st.progress(min(score / max_score, 1.0))
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Status message
-    if score >= 10:
-        st.markdown('<div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #00FF00; text-align: center;"><p style="color: #00FF00; font-size: 1.2rem; margin: 0; font-weight: bold;">🎯 ALL SYSTEMS ALIGNED</p><p style="color: #FFFFFF; margin: 0.5rem 0 0 0;">Maximum confluence detected</p></div>', unsafe_allow_html=True)
-    elif score >= 7:
-        st.markdown('<div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FFA500; text-align: center;"><p style="color: #FFA500; font-size: 1.2rem; margin: 0; font-weight: bold;">⚠️ MODERATE SETUP</p><p style="color: #FFFFFF; margin: 0.5rem 0 0 0;">Consider smaller position size</p></div>', unsafe_allow_html=True)
+    # Status message with risk management
+    if score >= 8:
+        st.markdown(f'''
+        <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #00FF00; text-align: center;">
+            <p style="color: #00FF00; font-size: 1.2rem; margin: 0; font-weight: bold;">🎯 PERFECT SETUP</p>
+            <p style="color: #FFFFFF; margin: 0.5rem 0 0 0;">All 6 steps confirmed</p>
+            <p style="color: #00FF00; margin: 0.5rem 0 0 0; font-size: 0.9rem;">✅ Risk: {risk_percent} | SL: Beyond liquidity sweep | TP: Next liquidity zone</p>
+        </div>
+        ''', unsafe_allow_html=True)
+    elif score >= 6:
+        st.markdown(f'''
+        <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FFA500; text-align: center;">
+            <p style="color: #FFA500; font-size: 1.2rem; margin: 0; font-weight: bold;">⚠️ MODERATE SETUP</p>
+            <p style="color: #FFFFFF; margin: 0.5rem 0 0 0;">Some elements missing - reduce size</p>
+            <p style="color: #FFA500; margin: 0.5rem 0 0 0; font-size: 0.9rem;">⚠️ Risk: 0.5-1% max | Tighter SL recommended</p>
+        </div>
+        ''', unsafe_allow_html=True)
     else:
-        st.markdown('<div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FF0000; text-align: center;"><p style="color: #FF0000; font-size: 1.2rem; margin: 0; font-weight: bold;">🚫 LOW PROBABILITY</p><p style="color: #FFFFFF; margin: 0.5rem 0 0 0;">Wait for better confluence</p></div>', unsafe_allow_html=True)
+        st.markdown('<div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FF0000; text-align: center;"><p style="color: #FF0000; font-size: 1.2rem; margin: 0; font-weight: bold;">🚫 INCOMPLETE SETUP</p><p style="color: #FFFFFF; margin: 0.5rem 0 0 0;">Wait for all 6 steps to align</p></div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -888,87 +1010,126 @@ with st.expander("📊 DETAILED SCORE BREAKDOWN", expanded=False):
     breakdown_col1, breakdown_col2 = st.columns(2)
 
     with breakdown_col1:
-        st.markdown("#### ⏱ TIMEFRAME ALIGNMENT")
-        if daily == h4 and daily != "Neutral":
-            st.markdown('<p style="color: #00FF00;">✅ Daily & 4H aligned <span style="float: right;">+3</span></p>', unsafe_allow_html=True)
+        st.markdown("#### 📊 STEP 1: TREND (Max 2pts)")
+        if vwap_trend in ["Above VWAP (Bullish)", "Below VWAP (Bearish)"]:
+            st.markdown(f'<p style="color: #00FF00;">✅ {vwap_trend} <span style="float: right;">+2</span></p>', unsafe_allow_html=True)
         else:
-            st.markdown('<p style="color: #FF0000;">❌ Daily & 4H not aligned <span style="float: right;">0</span></p>', unsafe_allow_html=True)
-
-        if h1 == daily:
-            st.markdown('<p style="color: #00FF00;">✅ 1H matches Daily <span style="float: right;">+2</span></p>', unsafe_allow_html=True)
-        else:
-            st.markdown('<p style="color: #FF0000;">❌ 1H doesn\'t match <span style="float: right;">0</span></p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #FF0000;">❌ No clear trend <span style="float: right;">0</span></p>', unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("#### 📉 MARKET CONTEXT")
-        if (liquidity.startswith("Equal Lows") and daily == "Bullish") or (liquidity.startswith("Equal Highs") and daily == "Bearish"):
-            st.markdown('<p style="color: #00FF00;">✅ Liquidity swept <span style="float: right;">+2</span></p>', unsafe_allow_html=True)
+        st.markdown("#### 📉 STEP 2: FVG (Max 3pts)")
+        if fvg_present == "Yes":
+            st.markdown('<p style="color: #00FF00;">✅ FVG present <span style="float: right;">+1</span></p>', unsafe_allow_html=True)
+            if fvg_alignment == "Yes (Trend Trade)":
+                st.markdown('<p style="color: #00FF00;">✅ FVG aligned with trend <span style="float: right;">+2</span></p>', unsafe_allow_html=True)
+            elif fvg_alignment == "No (Fade/Reversal)":
+                st.markdown('<p style="color: #FFA500;">⚠️ Counter-trend FVG <span style="float: right;">+1</span></p>', unsafe_allow_html=True)
+        else:
+            st.markdown('<p style="color: #FF0000;">❌ No FVG <span style="float: right;">0</span></p>', unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### 💧 STEP 3: LIQUIDITY (Max 2pts)")
+        if liquidity_present == "Yes":
+            st.markdown(f'<p style="color: #00FF00;">✅ Liquidity zone identified <span style="float: right;">+2</span></p>', unsafe_allow_html=True)
+        else:
+            st.markdown('<p style="color: #FF0000;">❌ No liquidity zone <span style="float: right;">0</span></p>', unsafe_allow_html=True)
+
+    with breakdown_col2:
+        st.markdown("#### 🎯 STEP 4: PRICE REACTION (Max 2pts)")
+        if price_entered_fvg == "Yes":
+            st.markdown('<p style="color: #00FF00;">✅ Price entered FVG <span style="float: right;">+0.5</span></p>', unsafe_allow_html=True)
+        else:
+            st.markdown('<p style="color: #FF0000;">❌ Price not in FVG <span style="float: right;">0</span></p>', unsafe_allow_html=True)
+
+        if liquidity_swept == "Yes":
+            st.markdown('<p style="color: #00FF00;">✅ Liquidity swept <span style="float: right;">+0.5</span></p>', unsafe_allow_html=True)
         else:
             st.markdown('<p style="color: #FF0000;">❌ No liquidity sweep <span style="float: right;">0</span></p>', unsafe_allow_html=True)
 
-        if displacement == "Yes":
-            st.markdown('<p style="color: #00FF00;">✅ Displacement confirmed <span style="float: right;">+2</span></p>', unsafe_allow_html=True)
+        if rejection_candle == "Yes":
+            st.markdown('<p style="color: #00FF00;">✅ Rejection candle <span style="float: right;">+1</span></p>', unsafe_allow_html=True)
         else:
-            st.markdown('<p style="color: #FF0000;">❌ No displacement <span style="float: right;">0</span></p>', unsafe_allow_html=True)
-
-    with breakdown_col2:
-        if fvg == "Yes" and fvg_dir == daily:
-            st.markdown('<p style="color: #00FF00;">✅ FVG aligned <span style="float: right;">+2</span></p>', unsafe_allow_html=True)
-        else:
-            st.markdown('<p style="color: #FF0000;">❌ No FVG alignment <span style="float: right;">0</span></p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #FF0000;">❌ No rejection <span style="float: right;">0</span></p>', unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("#### 🎯 EXECUTION FILTERS")
-        if smt == "Confirmed (Same Direction)":
-            st.markdown('<p style="color: #00FF00;">✅ SMT confirmed <span style="float: right;">+1</span></p>', unsafe_allow_html=True)
+        st.markdown("#### ✅ STEP 5: CONFIRMATION (Max 1.5pts)")
+        if micro_structure == "Strong Reversal (Best)":
+            st.markdown('<p style="color: #00FF00;">✅ Strong micro reversal <span style="float: right;">+1</span></p>', unsafe_allow_html=True)
+        elif micro_structure == "Weak Reversal":
+            st.markdown('<p style="color: #FFA500;">⚠️ Weak reversal <span style="float: right;">+0.5</span></p>', unsafe_allow_html=True)
+        else:
+            st.markdown('<p style="color: #FF0000;">❌ No clear move <span style="float: right;">0</span></p>', unsafe_allow_html=True)
+
+        if smt_check == "Yes (Confirmed)":
+            st.markdown('<p style="color: #00FF00;">✅ ES & NQ aligned <span style="float: right;">+0.5</span></p>', unsafe_allow_html=True)
         else:
             st.markdown('<p style="color: #FF0000;">❌ SMT not confirmed <span style="float: right;">0</span></p>', unsafe_allow_html=True)
 
-        if session.startswith("NY"):
-            st.markdown('<p style="color: #00FF00;">✅ NY session <span style="float: right;">+1</span></p>', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("#### 🕐 STEP 6: TIMING (Max 0.5pts)")
+        if session_time in ["London Open (8-11am GMT)", "NY Open (9:30am-12pm EST)", "NY PM (2-4pm EST)"]:
+            st.markdown('<p style="color: #00FF00;">✅ Prime trading session <span style="float: right;">+0.5</span></p>', unsafe_allow_html=True)
         else:
-            st.markdown('<p style="color: #FF0000;">❌ Outside NY session <span style="float: right;">0</span></p>', unsafe_allow_html=True)
-
-        if confirmation == "Yes":
-            st.markdown('<p style="color: #00FF00;">✅ Lower TF confirmation <span style="float: right;">+2</span></p>', unsafe_allow_html=True)
-        else:
-            st.markdown('<p style="color: #FF0000;">❌ No confirmation <span style="float: right;">0</span></p>', unsafe_allow_html=True)
+            st.markdown('<p style="color: #FF0000;">❌ Outside prime time <span style="float: right;">0</span></p>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
-# Tips section with better formatting
-st.markdown('<h3 style="text-align: center; letter-spacing: 3px;">💡 SMART MONEY PRINCIPLES 💡</h3>', unsafe_allow_html=True)
+# Strategy cheat sheet
+st.markdown('<h3 style="text-align: center; letter-spacing: 3px;">💡 VWAP + FVG + LIQUIDITY CHEAT SHEET 💡</h3>', unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
     st.markdown("""
-    <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FFFFFF; text-align: center; height: 180px;">
-        <h4 style="color: #FFFFFF; margin-top: 0;">📊 STRUCTURE FIRST</h4>
-        <p style="color: #AAAAAA;">Align Daily + 4H + 1H timeframes before considering any trade setup</p>
+    <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #00FF00; text-align: center; height: 200px;">
+        <h4 style="color: #00FF00; margin-top: 0;">📊 VWAP = TREND</h4>
+        <p style="color: #AAAAAA; font-size: 0.9rem;">Above VWAP (1H-4H) = Bullish<br>Below VWAP = Bearish<br>Chopping = No Trade</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
     st.markdown("""
-    <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FFFFFF; text-align: center; height: 180px;">
-        <h4 style="color: #FFFFFF; margin-top: 0;">⏰ TIMING MATTERS</h4>
-        <p style="color: #AAAAAA;">Trade during NY session (14:30-21:00 UTC+1) for optimal liquidity</p>
+    <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FFA500; text-align: center; height: 200px;">
+        <h4 style="color: #FFA500; margin-top: 0;">💧 LIQUIDITY = FUEL</h4>
+        <p style="color: #AAAAAA; font-size: 0.9rem;">Smart money hunts stops at swing highs/lows<br>Wait for sweep + rejection</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
     st.markdown("""
-    <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FFFFFF; text-align: center; height: 180px;">
-        <h4 style="color: #FFFFFF; margin-top: 0;">✅ CONFIRM ENTRY</h4>
-        <p style="color: #AAAAAA;">Wait for 1M-5M reversal candle or BOS before executing</p>
+    <div style="background: #0a0a0a; padding: 1.5rem; border-radius: 10px; border: 2px solid #FF0000; text-align: center; height: 200px;">
+        <h4 style="color: #FF0000; margin-top: 0;">🎯 FVG = ENTRY</h4>
+        <p style="color: #AAAAAA; font-size: 0.9rem;">Price fills FVG after liquidity sweep<br>Enter on 1M-5M rejection</p>
     </div>
     """, unsafe_allow_html=True)
 
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Key rules
+st.markdown("""
+<div style="background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%); padding: 2rem; border-radius: 10px; border: 2px solid #FFFFFF; text-align: center;">
+    <h4 style="color: #FFFFFF; margin-top: 0; letter-spacing: 2px;">🔑 KEY RULES</h4>
+    <div style="display: flex; justify-content: space-around; margin-top: 1rem;">
+        <div style="flex: 1; padding: 0 1rem;">
+            <p style="color: #00FF00; font-weight: bold; margin: 0;">✅ ALWAYS</p>
+            <p style="color: #AAAAAA; font-size: 0.85rem;">Wait for all 6 steps<br>Risk 1-2% max<br>SL beyond liquidity sweep</p>
+        </div>
+        <div style="flex: 1; padding: 0 1rem;">
+            <p style="color: #FF0000; font-weight: bold; margin: 0;">🚫 NEVER</p>
+            <p style="color: #AAAAAA; font-size: 0.85rem;">Trade without FVG<br>Enter before liquidity sweep<br>Trade on bank holidays</p>
+        </div>
+        <div style="flex: 1; padding: 0 1rem;">
+            <p style="color: #FFA500; font-weight: bold; margin: 0;">⚠️ BEST TIMES</p>
+            <p style="color: #AAAAAA; font-size: 0.85rem;">London Open (8-11am GMT)<br>NY Open (9:30am-12pm EST)<br>NY PM (2-4pm EST)</p>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 # Footer
 st.markdown("---")
-st.markdown('<p style="text-align: center; color: #666; font-size: 0.9rem; letter-spacing: 2px;">BUILT FOR SMART MONEY TRADERS | REAL-TIME DATA UPDATES EVERY 60 SECONDS</p>', unsafe_allow_html=True)
+st.markdown('<p style="text-align: center; color: #666; font-size: 0.9rem; letter-spacing: 2px;">VWAP + FVG + LIQUIDITY SCALPING | WALL STREET-GRADE STRATEGY | AUTO-UPDATES EVERY 10s</p>', unsafe_allow_html=True)
 
