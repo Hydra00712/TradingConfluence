@@ -287,7 +287,7 @@ st.markdown('<p class="sub-header">7-STEP SYSTEM • VWAP + FVG + LIQUIDITY • 
 # --- FUNCTIONS FOR MARKET DATA ---
 @st.cache_data(ttl=10)  # Cache for 10 seconds for real-time updates
 def get_market_data():
-    """Fetch REAL-TIME market data for S&P 500 and NAS100"""
+    """Fetch REAL-TIME market data for S&P 500 and NAS100 with VOLUME"""
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -329,11 +329,26 @@ def get_market_data():
                 nas100_change = nas100_price - nas100_prev
                 nas100_pct = (nas100_change / nas100_prev * 100) if nas100_prev != 0 else 0
 
+                # Extract VOLUME data
+                sp500_volume_data = sp500_result.get('indicators', {}).get('quote', [{}])[0].get('volume', [])
+                nas100_volume_data = nas100_result.get('indicators', {}).get('quote', [{}])[0].get('volume', [])
+
+                # Calculate current volume (last 30 minutes) vs average
+                sp500_current_vol = sum([v for v in sp500_volume_data[-30:] if v is not None]) if sp500_volume_data else 0
+                sp500_avg_vol = sum([v for v in sp500_volume_data if v is not None]) / len([v for v in sp500_volume_data if v is not None]) * 30 if sp500_volume_data else 1
+
+                nas100_current_vol = sum([v for v in nas100_volume_data[-30:] if v is not None]) if nas100_volume_data else 0
+                nas100_avg_vol = sum([v for v in nas100_volume_data if v is not None]) / len([v for v in nas100_volume_data if v is not None]) * 30 if nas100_volume_data else 1
+
+                # Calculate volume percentage (current vs average)
+                sp500_vol_pct = (sp500_current_vol / sp500_avg_vol * 100) if sp500_avg_vol > 0 else 100
+                nas100_vol_pct = (nas100_current_vol / nas100_avg_vol * 100) if nas100_avg_vol > 0 else 100
+
                 # Verify we have valid data
                 if sp500_price > 1000 and nas100_price > 1000:  # Sanity check
                     return {
-                        'sp500': {'price': sp500_price, 'change': sp500_change, 'pct': sp500_pct},
-                        'nas100': {'price': nas100_price, 'change': nas100_change, 'pct': nas100_pct}
+                        'sp500': {'price': sp500_price, 'change': sp500_change, 'pct': sp500_pct, 'volume_pct': sp500_vol_pct},
+                        'nas100': {'price': nas100_price, 'change': nas100_change, 'pct': nas100_pct, 'volume_pct': nas100_vol_pct}
                     }
         except Exception as e:
             pass
@@ -365,8 +380,8 @@ def get_market_data():
 
                 if sp500_price > 1000 and nas100_price > 1000:
                     return {
-                        'sp500': {'price': sp500_price, 'change': sp500_change, 'pct': sp500_pct},
-                        'nas100': {'price': nas100_price, 'change': nas100_change, 'pct': nas100_pct}
+                        'sp500': {'price': sp500_price, 'change': sp500_change, 'pct': sp500_pct, 'volume_pct': 100},
+                        'nas100': {'price': nas100_price, 'change': nas100_change, 'pct': nas100_pct, 'volume_pct': 100}
                     }
         except Exception as e:
             pass
@@ -377,8 +392,8 @@ def get_market_data():
     except:
         # Fallback to demo data if API fails
         return {
-            'sp500': {'price': 5850.25, 'change': 12.50, 'pct': 0.21},
-            'nas100': {'price': 20125.75, 'change': -25.30, 'pct': -0.13},
+            'sp500': {'price': 5850.25, 'change': 12.50, 'pct': 0.21, 'volume_pct': 100},
+            'nas100': {'price': 20125.75, 'change': -25.30, 'pct': -0.13, 'volume_pct': 100},
             'demo': True
         }
 
@@ -422,8 +437,8 @@ def analyze_news_sentiment(title):
     else:
         return 'neutral'
 
-def check_trading_conditions():
-    """Check for bank holidays and low volume conditions - returns warning dict"""
+def check_trading_conditions(market_data=None):
+    """Check for bank holidays, low volume conditions, and REAL-TIME volume analysis - returns warning dict"""
     from datetime import datetime, timedelta
 
     # US Bank Holidays 2024-2025
@@ -464,6 +479,24 @@ def check_trading_conditions():
             warnings.append(f"🚨 TODAY IS A US BANK HOLIDAY ({holiday.strftime('%B %d, %Y')})")
             severity = 'high'
             break
+
+    # REAL-TIME VOLUME CHECK - Most important!
+    if market_data and 'demo' not in market_data:
+        es_vol = market_data.get('sp500', {}).get('volume_pct', 100)
+        nq_vol = market_data.get('nas100', {}).get('volume_pct', 100)
+        avg_vol = (es_vol + nq_vol) / 2
+
+        if avg_vol < 30:  # Less than 30% of normal volume
+            warnings.insert(0, f"🚨 EXTREMELY LOW VOLUME DETECTED - Current: {avg_vol:.0f}% of average")
+            severity = 'high'
+        elif avg_vol < 50:  # Less than 50% of normal volume
+            warnings.insert(0, f"⚠️ LOW VOLUME WARNING - Current: {avg_vol:.0f}% of average (Normal: 100%)")
+            if severity != 'high':
+                severity = 'medium'
+        elif avg_vol < 70:  # Less than 70% of normal volume
+            warnings.insert(0, f"⚠️ BELOW AVERAGE VOLUME - Current: {avg_vol:.0f}% of average")
+            if severity == 'none':
+                severity = 'low'
 
     # Check if tomorrow is a bank holiday (half-day trading often)
     tomorrow = (now + timedelta(days=1)).date()
@@ -632,6 +665,9 @@ with st.sidebar:
 
     market_data = get_market_data()
 
+    # Check trading conditions with REAL-TIME volume data
+    trading_conditions = check_trading_conditions(market_data)
+
     if market_data:
         # Show demo mode indicator if using fallback data
         if market_data.get('demo'):
@@ -639,6 +675,34 @@ with st.sidebar:
             st.markdown('<p style="color: #888; font-size: 0.75rem; text-align: center; margin-bottom: 1rem;">Click 🔄 to retry</p>', unsafe_allow_html=True)
         else:
             st.markdown('<p style="color: #00FF00; font-size: 0.75rem; text-align: center; margin-bottom: 1rem;">🔴 LIVE • Auto-updates every 10s</p>', unsafe_allow_html=True)
+
+        # Display VOLUME WARNING if detected
+        if trading_conditions['has_warning']:
+            if trading_conditions['severity'] == 'high':
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #330000 0%, #1a0000 100%); padding: 1.5rem; border-radius: 10px; border: 3px solid #FF0000; margin-bottom: 1.5rem; text-align: center;">
+                    <h3 style="color: #FF0000; margin: 0 0 1rem 0; letter-spacing: 2px;">🚨 DO NOT TRADE 🚨</h3>
+                    <p style="color: #FFFFFF; margin: 0; line-height: 1.6;">{'<br>'.join(trading_conditions['warnings'])}</p>
+                    <p style="color: #FF0000; margin: 1rem 0 0 0; font-weight: bold; font-size: 1.1rem;">{trading_conditions['recommendation']}</p>
+                    <p style="color: #AAAAAA; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Market conditions are NOT suitable for trading. Stay out!</p>
+                </div>
+                """, unsafe_allow_html=True)
+            elif trading_conditions['severity'] == 'medium':
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #332200 0%, #1a1100 100%); padding: 1.5rem; border-radius: 10px; border: 3px solid #FFA500; margin-bottom: 1.5rem; text-align: center;">
+                    <h3 style="color: #FFA500; margin: 0 0 1rem 0; letter-spacing: 2px;">⚠️ CAUTION ⚠️</h3>
+                    <p style="color: #FFFFFF; margin: 0; line-height: 1.6;">{'<br>'.join(trading_conditions['warnings'])}</p>
+                    <p style="color: #FFA500; margin: 1rem 0 0 0; font-weight: bold;">{trading_conditions['recommendation']}</p>
+                    <p style="color: #AAAAAA; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Reduce position size and be extra selective with entries.</p>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #1a1a00 0%, #0d0d00 100%); padding: 1rem; border-radius: 8px; border: 2px solid #888; margin-bottom: 1rem; text-align: center;">
+                    <h4 style="color: #888; margin: 0 0 0.5rem 0;">⚠️ HEADS UP ⚠️</h4>
+                    <p style="color: #AAAAAA; margin: 0; font-size: 0.9rem; line-height: 1.5;">{'<br>'.join(trading_conditions['warnings'])}</p>
+                </div>
+                """, unsafe_allow_html=True)
 
         # S&P 500
         st.markdown(f"""
@@ -740,44 +804,6 @@ with st.sidebar:
 
 # --- MAIN CONTENT: INPUTS ---
 st.markdown("---")
-
-# Check trading conditions (bank holidays, low volume)
-trading_conditions = check_trading_conditions()
-
-# Display warning banner if needed
-if trading_conditions['has_warning']:
-    if trading_conditions['severity'] == 'high':
-        st.markdown(f"""
-        <div class="warning-banner">
-            <div class="warning-title">🚨 DO NOT TRADE 🚨</div>
-            <div class="warning-text">
-                {'<br>'.join(trading_conditions['warnings'])}<br><br>
-                <strong>{trading_conditions['recommendation']}</strong><br>
-                Market conditions are NOT suitable for trading. Stay out!
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    elif trading_conditions['severity'] == 'medium':
-        st.markdown(f"""
-        <div class="warning-banner" style="background: linear-gradient(135deg, #FFA500 0%, #FF8C00 100%); border-color: #FFA500;">
-            <div class="warning-title">⚠️ CAUTION ⚠️</div>
-            <div class="warning-text">
-                {'<br>'.join(trading_conditions['warnings'])}<br><br>
-                <strong>{trading_conditions['recommendation']}</strong><br>
-                Reduce position size and be extra selective with entries.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    elif trading_conditions['severity'] == 'low':
-        st.markdown(f"""
-        <div class="warning-banner" style="background: linear-gradient(135deg, #FFAA00 0%, #FF9900 100%); border-color: #FFAA00;">
-            <div class="warning-title" style="font-size: 1.5rem;">⚠️ HEADS UP ⚠️</div>
-            <div class="warning-text" style="font-size: 1rem;">
-                {'<br>'.join(trading_conditions['warnings'])}<br><br>
-                <strong>{trading_conditions['recommendation']}</strong>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
 
 st.markdown('<h2 style="text-align: center; letter-spacing: 4px; margin: 2rem 0;">⚡ 7-STEP FUTURES SCALPING SYSTEM ⚡</h2>', unsafe_allow_html=True)
 st.markdown('<p style="text-align: center; color: #888; font-size: 0.9rem; margin-top: -1rem;">Higher TF: 1H/4H → Lower TF: 5M/15M</p>', unsafe_allow_html=True)
