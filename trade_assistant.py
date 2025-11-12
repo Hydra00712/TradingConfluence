@@ -726,6 +726,50 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
 
+        # VOLUME ANALYSIS DISPLAY
+        st.markdown("---")
+        st.markdown("### 📊 VOLUME ANALYSIS")
+
+        es_vol_pct = market_data['sp500'].get('volume_pct', 100)
+        nq_vol_pct = market_data['nas100'].get('volume_pct', 100)
+        avg_vol_pct = (es_vol_pct + nq_vol_pct) / 2
+
+        # Determine volume status and color
+        if avg_vol_pct >= 100:
+            vol_status = "HIGH VOLUME"
+            vol_color = "#00FF00"
+            vol_icon = "🔥"
+            vol_message = "Excellent trading conditions"
+        elif avg_vol_pct >= 70:
+            vol_status = "NORMAL VOLUME"
+            vol_color = "#00FF00"
+            vol_icon = "✅"
+            vol_message = "Good trading conditions"
+        elif avg_vol_pct >= 50:
+            vol_status = "BELOW AVERAGE"
+            vol_color = "#FFA500"
+            vol_icon = "⚠️"
+            vol_message = "Be cautious - reduced liquidity"
+        elif avg_vol_pct >= 30:
+            vol_status = "LOW VOLUME"
+            vol_color = "#FF0000"
+            vol_icon = "🚨"
+            vol_message = "Trade with extreme caution"
+        else:
+            vol_status = "VERY LOW VOLUME"
+            vol_color = "#FF0000"
+            vol_icon = "🛑"
+            vol_message = "DO NOT TRADE"
+
+        st.markdown(f"""
+        <div style="background: #0a0a0a; padding: 1rem; border-radius: 8px; border-left: 4px solid {vol_color};">
+            <p style="color: {vol_color}; font-weight: bold; margin: 0; font-size: 1.1rem;">{vol_icon} {vol_status}</p>
+            <p style="color: #FFFFFF; margin: 0.5rem 0 0 0; font-size: 1.2rem; font-weight: bold;">{avg_vol_pct:.0f}% of Average</p>
+            <p style="color: #AAAAAA; margin: 0.5rem 0 0 0; font-size: 0.85rem;">ES: {es_vol_pct:.0f}% • NQ: {nq_vol_pct:.0f}%</p>
+            <p style="color: {vol_color}; margin: 0.5rem 0 0 0; font-size: 0.9rem;">{vol_message}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
         # SMT Divergence Auto-Detection
         st.markdown("---")
         st.markdown("### 🔍 SMT ANALYSIS")
